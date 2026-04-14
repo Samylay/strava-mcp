@@ -5,6 +5,7 @@ interface TokenState {
 
 export class StravaAuth {
   private state: TokenState | null = null;
+  private refreshPromise: Promise<void> | null = null;
 
   async getAccessToken(): Promise<string> {
     if (this.isValid()) return this.state!.accessToken;
@@ -19,13 +20,31 @@ export class StravaAuth {
   }
 
   private async refresh(): Promise<void> {
+    if (this.refreshPromise) return this.refreshPromise;
+    this.refreshPromise = this.doRefresh().finally(() => {
+      this.refreshPromise = null;
+    });
+    return this.refreshPromise;
+  }
+
+  private async doRefresh(): Promise<void> {
+    const clientId = process.env.STRAVA_CLIENT_ID;
+    const clientSecret = process.env.STRAVA_CLIENT_SECRET;
+    const refreshToken = process.env.STRAVA_REFRESH_TOKEN;
+
+    if (!clientId || !clientSecret || !refreshToken) {
+      throw new Error(
+        'Missing required env vars: STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, STRAVA_REFRESH_TOKEN. Run `npm run setup`.'
+      );
+    }
+
     const response = await fetch('https://www.strava.com/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        client_id: process.env.STRAVA_CLIENT_ID,
-        client_secret: process.env.STRAVA_CLIENT_SECRET,
-        refresh_token: process.env.STRAVA_REFRESH_TOKEN,
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
         grant_type: 'refresh_token',
       }),
     });
