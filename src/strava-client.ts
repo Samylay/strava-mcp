@@ -22,7 +22,7 @@ async function stravaFetch<T>(path: string): Promise<T> {
   if (response.status === 429) {
     const reset = response.headers.get('X-RateLimit-Reset');
     const minutes = reset
-      ? Math.ceil((parseInt(reset) * 1000 - Date.now()) / 60000)
+      ? Math.ceil((parseInt(reset, 10) * 1000 - Date.now()) / 60000)
       : 15;
     throw new StravaApiError(429, `Strava rate limit reached. Try again in ${minutes} minutes.`);
   }
@@ -88,4 +88,10 @@ let zonesCache: StravaAthleteZones | null = null;
 export async function getAthleteZonesCached(): Promise<StravaAthleteZones> {
   if (!zonesCache) zonesCache = await getAthleteZones();
   return zonesCache;
+}
+
+/** Reset module-level caches. Used in tests to prevent cache bleed between cases. */
+export function resetCaches(): void {
+  athleteCache = null;
+  zonesCache = null;
 }

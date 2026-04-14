@@ -13,8 +13,6 @@ const { getAthlete, getAthleteStats, getActivities, getActivity,
         getAthleteCached, getAthleteZonesCached,
         StravaApiError } = await import('../src/strava-client.js');
 
-import { auth } from '../src/auth.js';
-
 describe('StravaApiError', () => {
   it('is an instance of Error with status', () => {
     const err = new StravaApiError(429, 'rate limited');
